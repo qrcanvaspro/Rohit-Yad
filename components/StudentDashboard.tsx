@@ -1,7 +1,6 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Student, Mark } from '../types';
-import { getStudentPerformanceAnalysis } from '../services/geminiService';
 
 interface StudentDashboardProps {
   student: Student;
@@ -12,20 +11,10 @@ interface StudentDashboardProps {
 }
 
 const StudentDashboard: React.FC<StudentDashboardProps> = ({ student, marks, resultsEnabled, examName, session }) => {
-  const [analysis, setAnalysis] = useState<string | null>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-
   const totalObtained = marks.reduce((sum, m) => sum + m.marks_obtained, 0);
   const totalMax = marks.reduce((sum, m) => sum + m.max_marks, 0);
   const percentage = totalMax > 0 ? ((totalObtained / totalMax) * 100).toFixed(2) : '0';
   const isPassed = parseFloat(percentage) >= 33;
-
-  const handleGetAnalysis = async () => {
-    setIsAnalyzing(true);
-    const result = await getStudentPerformanceAnalysis(student, marks);
-    setAnalysis(result);
-    setIsAnalyzing(false);
-  };
 
   if (!resultsEnabled) {
     return (
