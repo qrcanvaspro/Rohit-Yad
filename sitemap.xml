@@ -2,7 +2,7 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <!-- Main Entrance / Registration & Login -->
   <url>
-    <loc>https://svmrambagh-portal.example.com/</loc>
+    <loc>https://rambaghresultportal.netlify.app/</loc>
     <lastmod>2024-05-20</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
