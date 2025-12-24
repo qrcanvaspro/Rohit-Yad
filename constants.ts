@@ -1,4 +1,3 @@
-
 export const CLASSES = ['9', '10', '11', '12'];
 
 export const SECTIONS_MAP: Record<string, string[]> = {

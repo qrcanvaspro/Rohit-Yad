@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Role, Student } from '../types';
 import { CLASSES, SECTIONS_MAP } from '../constants';
