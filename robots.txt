@@ -1,6 +1,4 @@
 User-agent: *
 Allow: /
-Disallow: /admin/ # Placeholder if you add private routes later
 
-# Official Sitemap for Google
 Sitemap: https://rambaghresultportal.netlify.app/sitemap.xml
