@@ -7,7 +7,13 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const handleError = (error: any, context: string) => {
   const msg = error?.message || (typeof error === 'object' ? JSON.stringify(error) : String(error));
-  console.error(`[Supabase ${context}]:`, msg);
+  console.error(`[Supabase Error - ${context}]:`, error);
+  
+  // Specific hint for RLS errors
+  if (msg.toLowerCase().includes('permission') || msg.toLowerCase().includes('row-level security')) {
+    throw new Error(`${context} failed: ACCESS DENIED. Please run the SQL Policy fix in Supabase Dashboard.`);
+  }
+  
   throw new Error(`${context} failed: ${msg}`);
 };
 
@@ -20,17 +26,18 @@ export const db = {
     },
     async create(student: any) {
       const { data, error } = await supabase.from('students').insert([student]).select();
-      if (error) return handleError(error, "Create Student");
+      if (error) return handleError(error, "Student Registration");
+      if (!data || data.length === 0) throw new Error("Registration failed: No data returned. Check RLS 'INSERT' policy.");
       return data[0];
     },
     async delete(id: string) {
-      // Step 1: Delete all marks records for this student first to avoid FK error
+      // Step 1: Sabse pehle student ke marks delete karein (FK constraint ki wajah se)
       const { error: markError } = await supabase.from('marks').delete().eq('student_id', id);
-      if (markError) return handleError(markError, "Clear Student Marks");
+      if (markError) return handleError(markError, "Delete Marks Table");
 
-      // Step 2: Delete the student record
+      // Step 2: Phir student record delete karein
       const { error: studentError } = await supabase.from('students').delete().eq('id', id);
-      if (studentError) return handleError(studentError, "Delete Student Record");
+      if (studentError) return handleError(studentError, "Delete Student Table");
       
       return true;
     }
@@ -46,8 +53,8 @@ export const db = {
       if (error) return handleError(error, "Save Marks");
     },
     async deleteAll() {
-      // Trick to delete all: check for any id that is not null
-      const { error } = await supabase.from('marks').delete().not('id', 'is', null);
+      // Trick: Sabhi rows delete karne ke liye jinka id null nahi hai
+      const { error } = await supabase.from('marks').delete().neq('id', '00000000-0000-0000-0000-000000000000');
       if (error) return handleError(error, "Wipe All Marks");
       return true;
     }
@@ -55,7 +62,7 @@ export const db = {
   settings: {
     async get() {
       const { data, error } = await supabase.from('settings').select('*');
-      if (error) return { resultsEnabled: true, examName: 'Annual Examination', session: '2024-25' };
+      if (error || !data) return { resultsEnabled: true, examName: 'Annual Examination', session: '2024-25' };
       return data.reduce((acc: any, curr: any) => {
         acc[curr.key] = curr.value === 'true' ? true : curr.value === 'false' ? false : curr.value;
         return acc;

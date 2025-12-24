@@ -39,9 +39,12 @@ const Auth: React.FC<AuthProps> = ({ onLogin, onRegister, students }) => {
         if (!formData.name || !formData.roll_no || !formData.computer_id) {
           throw new Error('All fields are mandatory for registration');
         }
+        
+        // Local check for existing roll no (requires SELECT policy to be true for anon)
         if (students.some(s => s.roll_no === formData.roll_no)) {
           throw new Error('This Roll Number is already registered');
         }
+
         const newStudent = await onRegister({ 
           name: formData.name,
           roll_no: formData.roll_no,
@@ -49,6 +52,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin, onRegister, students }) => {
           class_name: formData.class_name,
           section: formData.section
         });
+        
         onLogin('STUDENT', newStudent);
       } 
       else if (view === 'student-login') {
@@ -56,7 +60,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin, onRegister, students }) => {
         if (student) {
           onLogin('STUDENT', student);
         } else {
-          throw new Error('Invalid Credentials. Please check Roll No and Computer ID.');
+          throw new Error('Invalid Credentials. Check Roll No and Computer ID.');
         }
       } 
       else if (view === 'teacher-login') {
@@ -74,7 +78,8 @@ const Auth: React.FC<AuthProps> = ({ onLogin, onRegister, students }) => {
         }
       }
     } catch (err: any) {
-      setError(err.message);
+      console.error("Auth Action Error:", err);
+      setError(err.message || "An unexpected error occurred during authorization.");
     } finally {
       setLoading(false);
     }
@@ -140,9 +145,16 @@ const Auth: React.FC<AuthProps> = ({ onLogin, onRegister, students }) => {
         
         <form onSubmit={handleAction} className="p-10 space-y-5">
           {error && (
-            <div className="bg-red-50 text-red-600 p-4 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-red-100 flex items-center gap-3">
-              <svg className="w-5 h-5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd"></path></svg>
-              {error}
+            <div className="bg-red-50 text-red-600 p-4 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-red-100 flex flex-col gap-2">
+              <div className="flex items-center gap-3">
+                <svg className="w-5 h-5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd"></path></svg>
+                <span>{error}</span>
+              </div>
+              {error.toLowerCase().includes('policy') && (
+                <p className="text-[8px] opacity-70 border-t border-red-200 pt-2 mt-1">
+                  Administrator needs to enable 'INSERT' policy for 'anon' role in Supabase.
+                </p>
+              )}
             </div>
           )}
           
