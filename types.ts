@@ -5,7 +5,7 @@ export interface Student {
   id: string;
   name: string;
   roll_no: string;
-  computer_id: string; // Required for student login
+  computer_id: string; 
   class_name: string;
   section: string;
   stream: string;
@@ -28,7 +28,7 @@ export interface SystemSettings {
 }
 
 export interface TeacherMapping {
-  [classSectionKey: string]: string; // "9-A": "919876543210"
+  [classSectionKey: string]: string; 
 }
 
 export interface AuthState {

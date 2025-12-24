@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -24,16 +25,52 @@
         backdrop-filter: blur(12px);
         border: 1px solid rgba(255, 255, 255, 0.3);
       }
+      
       @media print {
-        .no-print { display: none !important; }
-        body { background: white !important; }
-        .print-card { 
-          box-shadow: none !important; 
-          border: 2px solid #eee !important;
+        @page {
+          size: A4;
+          margin: 10mm;
+        }
+        body {
+          background: white !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+        .no-print {
+          display: none !important;
+        }
+        header, footer {
+          display: none !important;
+        }
+        #root {
+          padding: 0 !important;
           margin: 0 !important;
-          padding: 2rem !important;
+        }
+        .print-card {
+          box-shadow: none !important;
+          border: 2px solid #e2e8f0 !important;
+          margin: 0 !important;
+          padding: 30px !important;
+          width: 100% !important;
+          max-width: none !important;
+          border-radius: 0 !important;
+          position: relative;
+        }
+        /* Professional watermark for marksheets */
+        .print-card::before {
+          content: 'SARASWATI VIDYA MANDIR';
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%) rotate(-45deg);
+          font-size: 60px;
+          color: rgba(0,0,0,0.02);
+          z-index: 0;
+          white-space: nowrap;
+          font-weight: 900;
         }
       }
+
       ::-webkit-scrollbar { width: 6px; }
       ::-webkit-scrollbar-track { background: #f1f1f1; }
       ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }

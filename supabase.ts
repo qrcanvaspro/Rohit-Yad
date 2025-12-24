@@ -9,11 +9,6 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 const handleError = (error: any, context: string) => {
   const msg = error?.message || (typeof error === 'object' ? JSON.stringify(error) : String(error));
   console.error(`[Supabase Error - ${context}]:`, error);
-  
-  if (msg.toLowerCase().includes('permission') || msg.toLowerCase().includes('row-level security')) {
-    throw new Error(`${context} failed: ACCESS DENIED. Please run the SQL Policy fix in Supabase Dashboard.`);
-  }
-  
   throw new Error(`${context} failed: ${msg}`);
 };
 
@@ -27,13 +22,12 @@ export const db = {
     async create(student: any) {
       const { data, error } = await supabase.from('students').insert([student]).select();
       if (error) return handleError(error, "Student Registration");
-      if (!data || data.length === 0) throw new Error("Registration failed: No data returned.");
       return data[0];
     },
     async delete(id: string) {
       await supabase.from('marks').delete().eq('student_id', id);
       const { error: studentError } = await supabase.from('students').delete().eq('id', id);
-      if (studentError) return handleError(studentError, "Delete Student Table");
+      if (studentError) return handleError(studentError, "Delete Student");
       return true;
     }
   },

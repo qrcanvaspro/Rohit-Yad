@@ -101,7 +101,7 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ students, marks, re
   return (
     <div className="space-y-6">
       <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex flex-wrap items-center justify-between gap-4">
-        <h2 className="text-xl font-black uppercase tracking-tight">Grade Management</h2>
+        <h2 className="text-sm font-black uppercase tracking-widest text-slate-400 ml-4">Marks Management</h2>
         <div className="flex gap-2">
            <select value={selectedClass} onChange={(e) => { setSelectedClass(e.target.value); setSelectedSection('A'); }} className="px-4 py-2 bg-slate-50 border rounded-lg font-black text-xs uppercase">
               {CLASSES.map(c => <option key={c} value={c}>Class {c}</option>)}
@@ -125,19 +125,19 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ students, marks, re
             </thead>
             <tbody className="divide-y divide-slate-50">
               {filteredStudents.map(s => (
-                <tr key={s.id} className="hover:bg-slate-50/50">
+                <tr key={s.id} className="hover:bg-slate-50/50 transition-colors">
                   <td className="px-6 py-4 font-bold text-slate-500">#{s.roll_no}</td>
                   <td className="px-6 py-4 font-black uppercase text-slate-800">{s.name}</td>
                   <td className="px-6 py-4"><span className="text-[9px] font-black px-2 py-1 bg-orange-100 text-orange-700 rounded uppercase">{s.stream}</span></td>
                   <td className="px-6 py-4 text-right flex justify-end gap-2">
-                     <button onClick={() => setEditingMarksFor(s.id)} className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg text-[10px] font-black uppercase tracking-widest">Edit Marks</button>
+                     <button onClick={() => setEditingMarksFor(s.id)} className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg text-[10px] font-black uppercase tracking-widest">Update Results</button>
                      <button onClick={() => handleDeleteStudent(s.id)} disabled={isProcessing} className="p-2 text-red-600 hover:bg-red-50 rounded-lg text-[10px] font-black uppercase tracking-widest">Delete</button>
                   </td>
                 </tr>
               ))}
               {filteredStudents.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="px-6 py-10 text-center text-slate-300 font-bold uppercase text-[10px] tracking-widest italic">No students found in this section</td>
+                  <td colSpan={4} className="px-6 py-10 text-center text-slate-300 font-bold uppercase text-[10px] tracking-widest italic">No students registered in this section yet</td>
                 </tr>
               )}
             </tbody>
