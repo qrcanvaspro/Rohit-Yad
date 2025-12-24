@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Student, Mark } from '../types';
 import { CLASSES, SECTIONS_MAP, SUBJECTS_BY_STREAM } from '../constants';
@@ -11,7 +12,7 @@ interface TeacherDashboardProps {
   refreshData: () => Promise<void>;
 }
 
-const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ students, marks, setMarks, setStudents, refreshData }) => {
+const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ students, marks, refreshData }) => {
   const [selectedClass, setSelectedClass] = useState('9');
   const [selectedSection, setSelectedSection] = useState('A');
   const [editingMarksFor, setEditingMarksFor] = useState<string | null>(null);
@@ -20,15 +21,13 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ students, marks, se
   const filteredStudents = students.filter(s => s.class_name === selectedClass && s.section === selectedSection);
 
   const handleDeleteStudent = async (id: string) => {
-    if (!confirm("Are you sure? This will delete the student and all their associated marks permanently.")) return;
+    if (!confirm("Delete this student permanently?")) return;
     setIsProcessing(true);
     try {
       await db.students.delete(id);
-      // Hard refresh from server to ensure perfect sync
       await refreshData();
-      alert("Student deleted successfully.");
     } catch (err: any) {
-      alert("Delete Failed: " + err.message + "\n\nPlease check Supabase RLS 'DELETE' policies.");
+      alert("Error: " + err.message);
     } finally {
       setIsProcessing(false);
     }
@@ -55,12 +54,11 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ students, marks, se
           marks_obtained: localMarks[sub] || 0,
           max_marks: 100
         }));
-        
         await db.marks.upsert(entries);
         await refreshData();
         setEditingMarksFor(null);
       } catch (e: any) {
-        alert("Save Failed: " + e.message);
+        alert("Failed to save: " + e.message);
       } finally {
         setIsProcessing(false);
       }
@@ -93,7 +91,7 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ students, marks, se
             onClick={handleSave} 
             className="w-full mt-6 bg-indigo-600 hover:bg-indigo-700 text-white font-black py-4 rounded-2xl uppercase tracking-widest text-xs flex justify-center items-center"
           >
-            {isProcessing ? "Processing..." : "Sync Grades"}
+            {isProcessing ? "Saving..." : "Update Marks"}
           </button>
         </div>
       </div>
@@ -103,7 +101,7 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ students, marks, se
   return (
     <div className="space-y-6">
       <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex flex-wrap items-center justify-between gap-4">
-        <h2 className="text-xl font-black uppercase tracking-tight">Student Records</h2>
+        <h2 className="text-xl font-black uppercase tracking-tight">Grade Management</h2>
         <div className="flex gap-2">
            <select value={selectedClass} onChange={(e) => { setSelectedClass(e.target.value); setSelectedSection('A'); }} className="px-4 py-2 bg-slate-50 border rounded-lg font-black text-xs uppercase">
               {CLASSES.map(c => <option key={c} value={c}>Class {c}</option>)}
@@ -115,29 +113,36 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ students, marks, se
       </div>
 
       <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
-        <table className="w-full text-left">
-          <thead className="bg-slate-50 border-b">
-            <tr>
-              <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Roll</th>
-              <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Student Name</th>
-              <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Stream</th>
-              <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-widest text-slate-400">Action</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-50">
-            {filteredStudents.map(s => (
-              <tr key={s.id} className="hover:bg-slate-50/50">
-                <td className="px-6 py-4 font-bold text-slate-500">#{s.roll_no}</td>
-                <td className="px-6 py-4 font-black uppercase text-slate-800">{s.name}</td>
-                <td className="px-6 py-4"><span className="text-[9px] font-black px-2 py-1 bg-orange-100 text-orange-700 rounded uppercase">{s.stream}</span></td>
-                <td className="px-6 py-4 text-right flex justify-end gap-2">
-                   <button onClick={() => setEditingMarksFor(s.id)} className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg text-[10px] font-black uppercase tracking-widest">Edit</button>
-                   <button onClick={() => handleDeleteStudent(s.id)} disabled={isProcessing} className="p-2 text-red-600 hover:bg-red-50 rounded-lg text-[10px] font-black uppercase tracking-widest disabled:opacity-30">Del</button>
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead className="bg-slate-50 border-b">
+              <tr>
+                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Roll</th>
+                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Name</th>
+                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Stream</th>
+                <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-widest text-slate-400">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {filteredStudents.map(s => (
+                <tr key={s.id} className="hover:bg-slate-50/50">
+                  <td className="px-6 py-4 font-bold text-slate-500">#{s.roll_no}</td>
+                  <td className="px-6 py-4 font-black uppercase text-slate-800">{s.name}</td>
+                  <td className="px-6 py-4"><span className="text-[9px] font-black px-2 py-1 bg-orange-100 text-orange-700 rounded uppercase">{s.stream}</span></td>
+                  <td className="px-6 py-4 text-right flex justify-end gap-2">
+                     <button onClick={() => setEditingMarksFor(s.id)} className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg text-[10px] font-black uppercase tracking-widest">Edit Marks</button>
+                     <button onClick={() => handleDeleteStudent(s.id)} disabled={isProcessing} className="p-2 text-red-600 hover:bg-red-50 rounded-lg text-[10px] font-black uppercase tracking-widest">Delete</button>
+                  </td>
+                </tr>
+              ))}
+              {filteredStudents.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="px-6 py-10 text-center text-slate-300 font-bold uppercase text-[10px] tracking-widest italic">No students found in this section</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
       {editingMarksFor && <MarkEditor student={students.find(s => s.id === editingMarksFor)!} />}
     </div>

@@ -1,6 +1,6 @@
 
-import React from 'react';
-import { Student, Mark } from '../types';
+import React, { useState } from 'react';
+import { Student, Mark, TeacherMapping } from '../types';
 
 interface StudentDashboardProps {
   student: Student;
@@ -8,13 +8,39 @@ interface StudentDashboardProps {
   resultsEnabled: boolean;
   examName: string;
   session: string;
+  teacherMappings: TeacherMapping;
 }
 
-const StudentDashboard: React.FC<StudentDashboardProps> = ({ student, marks, resultsEnabled, examName, session }) => {
+const StudentDashboard: React.FC<StudentDashboardProps> = ({ student, marks, resultsEnabled, examName, session, teacherMappings }) => {
+  const [parentMessage, setParentMessage] = useState('');
+
   const totalObtained = marks.reduce((sum, m) => sum + m.marks_obtained, 0);
   const totalMax = marks.reduce((sum, m) => sum + m.max_marks, 0);
   const percentage = totalMax > 0 ? ((totalObtained / totalMax) * 100).toFixed(2) : '0';
   const isPassed = parseFloat(percentage) >= 33;
+
+  const teacherKey = `${student.class_name}-${student.section}`;
+  const teacherPhone = teacherMappings[teacherKey];
+
+  const handleDownload = () => {
+    window.print();
+  };
+
+  const handleWhatsAppDirect = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!parentMessage.trim()) return;
+    if (!teacherPhone) {
+      alert("Error: Class teacher contact is not assigned by administrator.");
+      return;
+    }
+
+    const formattedMsg = encodeURIComponent(
+      `📌 SVM PORTAL QUERY\n👤 Student: ${student.name}\n🆔 Roll: ${student.roll_no}\n🏫 Class: ${student.class_name}-${student.section}\n📝 Query: ${parentMessage}`
+    );
+    
+    window.open(`https://wa.me/${teacherPhone}?text=${formattedMsg}`, '_blank');
+    setParentMessage('');
+  };
 
   if (!resultsEnabled) {
     return (
@@ -30,21 +56,9 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ student, marks, res
     );
   }
 
-  if (marks.length === 0) {
-    return (
-      <div className="min-h-[50vh] flex flex-col items-center justify-center p-12 bg-white rounded-[3rem] shadow-2xl animate-in zoom-in">
-        <div className="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center mb-6">
-          <svg className="w-10 h-10 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
-        </div>
-        <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight mb-2">Grading Pending</h2>
-        <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">Faculty is still updating records for your session.</p>
-      </div>
-    );
-  }
-
   return (
     <div className="max-w-4xl mx-auto space-y-10 animate-in fade-in duration-1000">
-      <div className="bg-white p-12 md:p-20 rounded-[4rem] shadow-2xl border-[12px] border-slate-50 relative overflow-hidden print-card">
+      <div id="marksheet-to-print" className="bg-white p-12 md:p-20 rounded-[4rem] shadow-2xl border-[12px] border-slate-50 relative overflow-hidden print-card">
         <div className="absolute top-0 right-0 w-40 h-40 bg-indigo-600/5 rounded-bl-full"></div>
         <div className="absolute bottom-0 left-0 w-40 h-40 bg-orange-500/5 rounded-tr-full"></div>
 
@@ -64,7 +78,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ student, marks, res
                <span className="bg-orange-50 text-orange-700 px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest">{student.stream} STREAM</span>
             </div>
           </div>
-          <div className={`text-right no-print ${isPassed ? 'text-emerald-600' : 'text-red-600'}`}>
+          <div className={`text-right ${isPassed ? 'text-emerald-600' : 'text-red-600'}`}>
              <div className="text-[10px] font-black uppercase tracking-widest mb-1 opacity-50">Final Result</div>
              <div className="text-4xl font-black uppercase tracking-tighter">{isPassed ? 'Passed' : 'Failed'}</div>
           </div>
@@ -99,30 +113,52 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ student, marks, res
               <div className="h-1.5 w-12 bg-orange-400 rounded-full mb-6"></div>
               <p className="text-[11px] font-bold text-indigo-200 uppercase tracking-widest">Aggregate: {totalObtained} / {totalMax}</p>
             </div>
-
-            <div className="bg-slate-50 p-8 rounded-[2.5rem] border border-slate-100 flex items-center justify-between">
-              <div>
-                <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] mb-1">Status Division</p>
-                <p className={`text-2xl font-black uppercase tracking-tight ${isPassed ? 'text-emerald-600' : 'text-red-600'}`}>{isPassed ? 'Qualified' : 'Re-Appear'}</p>
-              </div>
-              <div className={`p-4 rounded-2xl ${isPassed ? 'bg-white text-emerald-500 shadow-sm' : 'bg-white text-red-500 shadow-sm'}`}>
-                <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
-              </div>
-            </div>
           </div>
-        </div>
-
-        <div className="mt-16 pt-12 border-t-2 border-slate-50 no-print text-center">
-          <p className="text-[10px] font-bold text-slate-300 uppercase tracking-[0.5em] mb-2">Authenticated Digital Copy</p>
-          <div className="text-slate-400 italic text-[10px]">Issued for: {examName} ({session})</div>
         </div>
       </div>
 
-      <div className="flex justify-center gap-4 no-print pb-16">
-        <button onClick={() => window.print()} className="bg-indigo-600 hover:bg-indigo-700 text-white px-10 py-5 rounded-[2rem] text-[10px] font-black uppercase tracking-widest transition-all shadow-2xl shadow-indigo-100 flex items-center gap-3 active:scale-95">
-           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-           Print Marksheet
-        </button>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 no-print pb-16">
+        <div className="bg-white p-10 rounded-[3rem] shadow-xl border border-slate-100">
+           <div className="flex items-center gap-4 mb-6">
+              <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
+                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+              </div>
+              <h4 className="text-sm font-black uppercase tracking-widest">Quick Actions</h4>
+           </div>
+           <button 
+             onClick={handleDownload} 
+             className="w-full bg-slate-900 hover:bg-black text-white px-8 py-5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl flex items-center justify-center gap-4 active:scale-95 group"
+           >
+              Download PDF Report
+           </button>
+        </div>
+
+        <div className="bg-white p-10 rounded-[3rem] shadow-xl border border-slate-100">
+           <div className="flex items-center gap-4 mb-6">
+              <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
+                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
+              </div>
+              <h4 className="text-sm font-black uppercase tracking-widest">Message Teacher</h4>
+           </div>
+           <form onSubmit={handleWhatsAppDirect} className="space-y-4">
+              <textarea 
+                value={parentMessage}
+                onChange={e => setParentMessage(e.target.value)}
+                placeholder="Type your message for the class teacher here..."
+                className="w-full p-5 bg-slate-50 border-0 rounded-2xl text-xs font-bold outline-none focus:ring-2 ring-emerald-500 h-28 resize-none"
+              ></textarea>
+              <button 
+                type="submit"
+                disabled={!parentMessage.trim()}
+                className="w-full bg-[#25D366] hover:bg-[#128C7E] disabled:bg-slate-200 text-white px-8 py-5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl flex items-center justify-center gap-4 active:scale-95"
+              >
+                 Open WhatsApp & Send
+              </button>
+              {!teacherPhone && (
+                <p className="text-[8px] font-black text-red-400 uppercase text-center">Note: Teacher contact details not set in portal.</p>
+              )}
+           </form>
+        </div>
       </div>
     </div>
   );

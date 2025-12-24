@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { Role, Student, Mark, AuthState } from './types';
+import { Role, Student, Mark, AuthState, TeacherMapping } from './types';
 import { getStreamForClassSection } from './constants';
 import Auth from './components/Auth';
 import TeacherDashboard from './components/TeacherDashboard';
@@ -20,7 +21,8 @@ const App: React.FC = () => {
   const [settings, setSettings] = useState({
     resultsEnabled: true,
     examName: 'Annual Examination',
-    session: '2024-25'
+    session: '2024-25',
+    teacherMappings: {} as TeacherMapping
   });
   const [loading, setLoading] = useState(true);
 
@@ -34,7 +36,24 @@ const App: React.FC = () => {
       ]);
       setStudents(sData);
       setMarks(mData);
-      setSettings(prev => ({ ...prev, ...sSettings }));
+      
+      // Parse teacher mappings if they exist in DB
+      let teacherMappings = {};
+      try {
+        if (sSettings.teacherMappings) {
+          teacherMappings = typeof sSettings.teacherMappings === 'string' 
+            ? JSON.parse(sSettings.teacherMappings) 
+            : sSettings.teacherMappings;
+        }
+      } catch (e) {
+        console.error("Mapping Parse Error", e);
+      }
+
+      setSettings(prev => ({ 
+        ...prev, 
+        ...sSettings,
+        teacherMappings
+      }));
     } catch (error: any) {
       console.error("Fetch Error:", error.message);
     } finally {
@@ -71,6 +90,12 @@ const App: React.FC = () => {
     }
   };
 
+  const handleUpdateMappings = async (mappings: TeacherMapping) => {
+    const jsonStr = JSON.stringify(mappings);
+    await handleUpdateSetting('teacherMappings', jsonStr);
+    setSettings(prev => ({ ...prev, teacherMappings: mappings }));
+  };
+
   const handleLogout = () => setAuthState({ user: null, role: null, profile: null });
 
   const handleDeleteAllMarks = async () => {
@@ -78,10 +103,10 @@ const App: React.FC = () => {
       try {
         setLoading(true);
         await db.marks.deleteAll();
-        await fetchData(); // Hard refresh from server
+        await fetchData(); 
         alert("Success: All marks have been deleted.");
       } catch (e: any) {
-        alert("Action Failed: " + e.message + "\n\nTip: Ensure Supabase RLS policies allow DELETE operations.");
+        alert("Action Failed: " + e.message);
       } finally {
         setLoading(false);
       }
@@ -120,6 +145,8 @@ const App: React.FC = () => {
           studentCount={students.length}
           onFactoryReset={() => { localStorage.clear(); window.location.reload(); }}
           onDeleteAllMarks={handleDeleteAllMarks}
+          teacherMappings={settings.teacherMappings}
+          onUpdateMappings={handleUpdateMappings}
         />
       )}
       {authState.role === 'TEACHER' && (
@@ -138,6 +165,7 @@ const App: React.FC = () => {
           resultsEnabled={settings.resultsEnabled}
           examName={settings.examName}
           session={settings.session}
+          teacherMappings={settings.teacherMappings}
         />
       )}
     </Layout>

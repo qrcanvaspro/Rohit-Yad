@@ -27,6 +27,10 @@ export interface SystemSettings {
   value: string;
 }
 
+export interface TeacherMapping {
+  [classSectionKey: string]: string; // "9-A": "919876543210"
+}
+
 export interface AuthState {
   user: any | null;
   role: Role | null;
