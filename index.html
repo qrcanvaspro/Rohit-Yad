@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SVM Rambagh Basti - Official Result Portal</title>
+    <title>SVM Rambagh Basti - Result Portal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
@@ -16,33 +16,26 @@
         font-family: 'Outfit', sans-serif; 
         background-color: #f8fafc;
         color: var(--svm-navy);
+        margin: 0;
       }
       .glass-card {
         background: rgba(255, 255, 255, 0.8);
         backdrop-filter: blur(12px);
         border: 1px solid rgba(255, 255, 255, 0.3);
       }
-      .mesh-bg {
-        background-color: #ffffff;
-        background-image: 
-          radial-gradient(at 0% 0%, hsla(28,100%,74%,0.15) 0, transparent 50%), 
-          radial-gradient(at 50% 0%, hsla(224,71%,48%,0.1) 0, transparent 50%), 
-          radial-gradient(at 100% 0%, hsla(28,100%,74%,0.15) 0, transparent 50%);
-      }
       @media print {
         .no-print { display: none !important; }
         body { background: white !important; }
         .print-card { 
           box-shadow: none !important; 
-          border: 4px double #eee !important;
+          border: 2px solid #eee !important;
           margin: 0 !important;
           padding: 2rem !important;
         }
       }
-      ::-webkit-scrollbar { width: 8px; }
+      ::-webkit-scrollbar { width: 6px; }
       ::-webkit-scrollbar-track { background: #f1f1f1; }
       ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-      ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
   <script type="importmap">
 {
@@ -57,7 +50,7 @@
 }
 </script>
 </head>
-  <body class="mesh-bg min-h-screen">
+  <body>
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>

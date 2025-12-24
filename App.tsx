@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Role, Student, Mark, AuthState } from './types';
 import { getStreamForClassSection } from './constants';
@@ -18,30 +17,26 @@ const App: React.FC = () => {
 
   const [students, setStudents] = useState<Student[]>([]);
   const [marks, setMarks] = useState<Mark[]>([]);
-  const [resultsEnabled, setResultsEnabled] = useState<boolean>(true);
-  const [examName, setExamName] = useState<string>('Annual Examination');
-  const [session, setSession] = useState<string>('2024-25');
+  const [settings, setSettings] = useState({
+    resultsEnabled: true,
+    examName: 'Annual Examination',
+    session: '2024-25'
+  });
   const [loading, setLoading] = useState(true);
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [sData, mData, settings] = await Promise.all([
+      const [sData, mData, sSettings] = await Promise.all([
         db.students.getAll(),
         db.marks.getAll(),
         db.settings.get()
       ]);
-      
       setStudents(sData);
       setMarks(mData);
-      
-      if (settings) {
-        if (settings.resultsEnabled !== undefined) setResultsEnabled(settings.resultsEnabled);
-        if (settings.examName) setExamName(settings.examName);
-        if (settings.session) setSession(settings.session);
-      }
+      setSettings(prev => ({ ...prev, ...sSettings }));
     } catch (error: any) {
-      console.error("Initial Fetch Error:", error.message);
+      console.error("Fetch Error:", error.message);
     } finally {
       setLoading(false);
     }
@@ -59,114 +54,94 @@ const App: React.FC = () => {
       stream,
       created_at: new Date().toISOString()
     };
-    
     const created = await db.students.create(newStudent);
-    setStudents(prev => [created, ...prev]);
+    setStudents(prev => [...prev, created]);
     return created;
   };
 
   const handleUpdateSetting = async (key: string, value: string) => {
     try {
       await db.settings.update(key, value);
-      if (key === 'resultsEnabled') setResultsEnabled(value === 'true');
-      if (key === 'examName') setExamName(value);
-      if (key === 'session') setSession(value);
-    } catch (e) {
-      console.error("Setting update failed", e);
-      alert("Failed to save setting to cloud.");
+      setSettings(prev => ({
+        ...prev,
+        [key]: value === 'true' ? true : value === 'false' ? false : value
+      }));
+    } catch (e: any) {
+      alert(`Setting Error: ${e.message}`);
     }
   };
+
+  const handleLogout = () => setAuthState({ user: null, role: null, profile: null });
 
   const handleDeleteAllMarks = async () => {
-    if (window.confirm("FATAL WARNING: This will permanently delete ALL marks for ALL students. This cannot be undone. Are you absolutely sure?")) {
-      const secondCheck = window.prompt("Type 'DELETE' to confirm complete wipeout:");
-      if (secondCheck === 'DELETE') {
-        try {
-          setLoading(true);
-          await db.marks.deleteAll();
-          setMarks([]);
-          alert("All marks have been successfully wiped from the database.");
-        } catch (e) {
-          alert("Error deleting marks. Check connection.");
-        } finally {
-          setLoading(false);
-        }
+    if (confirm("DANGER: This will permanently delete ALL marks for ALL students. Continue?")) {
+      try {
+        setLoading(true);
+        await db.marks.deleteAll();
+        await fetchData(); // Hard refresh from server
+        alert("Success: All marks have been deleted.");
+      } catch (e: any) {
+        alert("Action Failed: " + e.message + "\n\nTip: Ensure Supabase RLS policies allow DELETE operations.");
+      } finally {
+        setLoading(false);
       }
-    }
-  };
-
-  const handleLogout = () => {
-    setAuthState({ user: null, role: null, profile: null });
-  };
-
-  const factoryReset = async () => {
-    if (window.confirm("This will clear your current local session. The data on cloud remains safe.")) {
-      localStorage.clear();
-      handleLogout();
-      window.location.reload();
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-white">
-        <div className="w-16 h-16 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
-        <p className="text-slate-400 font-black text-[10px] uppercase tracking-widest">Initialising Secure Portal...</p>
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="flex flex-col items-center">
+          <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Loading SVM Portal...</p>
+        </div>
       </div>
     );
   }
 
-  const renderContent = () => {
-    if (!authState.role) {
-      return (
-        <Auth 
-          onLogin={(role, profile) => setAuthState({ user: profile, role, profile })}
-          onRegister={handleRegister}
-          students={students}
-        />
-      );
-    }
-
+  if (!authState.role) {
     return (
-      <Layout 
-        user={authState.profile} 
-        role={authState.role} 
-        onLogout={handleLogout}
-        schoolName="SVM Rambagh Basti"
-      >
-        {authState.role === 'ADMIN' && (
-          <AdminDashboard 
-            resultsEnabled={resultsEnabled}
-            onUpdateSetting={handleUpdateSetting}
-            examName={examName}
-            session={session}
-            studentCount={students.length}
-            onFactoryReset={factoryReset}
-            onDeleteAllMarks={handleDeleteAllMarks}
-          />
-        )}
-        {authState.role === 'TEACHER' && (
-          <TeacherDashboard 
-            students={students}
-            marks={marks}
-            setMarks={setMarks}
-            setStudents={setStudents}
-          />
-        )}
-        {authState.role === 'STUDENT' && (
-          <StudentDashboard 
-            student={authState.profile}
-            marks={marks.filter(m => m.student_id === authState.profile.id)}
-            resultsEnabled={resultsEnabled}
-            examName={examName}
-            session={session}
-          />
-        )}
-      </Layout>
+      <Auth 
+        onLogin={(role, profile) => setAuthState({ user: profile, role, profile })}
+        onRegister={handleRegister}
+        students={students}
+      />
     );
-  };
+  }
 
-  return <div className="min-h-screen">{renderContent()}</div>;
+  return (
+    <Layout user={authState.profile} role={authState.role} onLogout={handleLogout} schoolName="SVM Rambagh Basti">
+      {authState.role === 'ADMIN' && (
+        <AdminDashboard 
+          resultsEnabled={settings.resultsEnabled}
+          onUpdateSetting={handleUpdateSetting}
+          examName={settings.examName}
+          session={settings.session}
+          studentCount={students.length}
+          onFactoryReset={() => { localStorage.clear(); window.location.reload(); }}
+          onDeleteAllMarks={handleDeleteAllMarks}
+        />
+      )}
+      {authState.role === 'TEACHER' && (
+        <TeacherDashboard 
+          students={students}
+          marks={marks}
+          setMarks={setMarks}
+          setStudents={setStudents}
+          refreshData={fetchData}
+        />
+      )}
+      {authState.role === 'STUDENT' && (
+        <StudentDashboard 
+          student={authState.profile}
+          marks={marks.filter(m => m.student_id === authState.profile.id)}
+          resultsEnabled={settings.resultsEnabled}
+          examName={settings.examName}
+          session={settings.session}
+        />
+      )}
+    </Layout>
+  );
 };
 
 export default App;

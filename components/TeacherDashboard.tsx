@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Student, Mark } from '../types';
 import { CLASSES, SECTIONS_MAP, SUBJECTS_BY_STREAM } from '../constants';
@@ -9,25 +8,29 @@ interface TeacherDashboardProps {
   marks: Mark[];
   setMarks: React.Dispatch<React.SetStateAction<Mark[]>>;
   setStudents: React.Dispatch<React.SetStateAction<Student[]>>;
+  refreshData: () => Promise<void>;
 }
 
-const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ students, marks, setMarks, setStudents }) => {
+const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ students, marks, setMarks, setStudents, refreshData }) => {
   const [selectedClass, setSelectedClass] = useState('9');
   const [selectedSection, setSelectedSection] = useState('A');
   const [editingMarksFor, setEditingMarksFor] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const filteredStudents = students.filter(s => s.class_name === selectedClass && s.section === selectedSection);
 
   const handleDeleteStudent = async (id: string) => {
-    if (window.confirm("CAUTION: This will delete the student and their marks permanently.")) {
-      try {
-        await db.students.delete(id);
-        setStudents(prev => prev.filter(s => s.id !== id));
-        setMarks(prev => prev.filter(m => m.student_id !== id));
-      } catch (err) {
-        alert("Could not delete from cloud. Check connection.");
-      }
+    if (!confirm("Are you sure? This will delete the student and all their associated marks permanently.")) return;
+    setIsProcessing(true);
+    try {
+      await db.students.delete(id);
+      // Hard refresh from server to ensure perfect sync
+      await refreshData();
+      alert("Student deleted successfully.");
+    } catch (err: any) {
+      alert("Delete Failed: " + err.message + "\n\nPlease check Supabase RLS 'DELETE' policies.");
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -44,7 +47,7 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ students, marks, se
     );
 
     const handleSave = async () => {
-      setSaving(true);
+      setIsProcessing(true);
       try {
         const entries = subjects.map(sub => ({
           student_id: student.id,
@@ -54,118 +57,89 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ students, marks, se
         }));
         
         await db.marks.upsert(entries);
-        
-        // Update the main app state immediately
-        setMarks(prev => {
-          const others = prev.filter(m => m.student_id !== student.id);
-          const newMarks: Mark[] = entries.map(e => ({ ...e, id: crypto.randomUUID() }));
-          return [...others, ...newMarks];
-        });
-        
+        await refreshData();
         setEditingMarksFor(null);
-      } catch (e) {
-        alert("Failed to sync grades with database.");
+      } catch (e: any) {
+        alert("Save Failed: " + e.message);
       } finally {
-        setSaving(false);
+        setIsProcessing(false);
       }
     };
 
     return (
-      <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[100]">
-        <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg p-8 animate-in zoom-in duration-200">
-          <div className="flex justify-between items-start mb-6">
-            <div>
-              <h3 className="text-xl font-black text-slate-900 uppercase">{student.name}</h3>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Roll: {student.roll_no} • {student.stream}</p>
-            </div>
-            <button onClick={() => setEditingMarksFor(null)} className="text-slate-300 hover:text-slate-600">
+      <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4 z-[100]">
+        <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-lg p-8">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-xl font-black uppercase text-slate-800">{student.name}</h3>
+            <button onClick={() => setEditingMarksFor(null)} className="text-slate-400 hover:text-slate-600">
                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
           </div>
-          
-          <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2 scrollbar-hide">
+          <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-2">
             {subjects.map(sub => (
-              <div key={sub} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
-                <span className="font-bold text-slate-700 text-sm">{sub}</span>
+              <div key={sub} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                <span className="font-bold text-slate-700 text-sm uppercase">{sub}</span>
                 <input 
-                  type="number" 
-                  max="100"
-                  min="0"
+                  type="number" max="100" min="0"
                   value={localMarks[sub]}
-                  onChange={(e) => setLocalMarks({...localMarks, [sub]: Math.min(100, parseInt(e.target.value) || 0)})}
-                  className="w-16 px-2 py-1 bg-white border border-slate-200 rounded text-center font-black focus:border-indigo-500 outline-none"
+                  onChange={(e) => setLocalMarks({...localMarks, [sub]: Math.min(100, Math.max(0, parseInt(e.target.value) || 0))})}
+                  className="w-20 px-3 py-2 bg-white border border-slate-200 rounded-xl text-center font-black"
                 />
               </div>
             ))}
           </div>
-
-          <div className="mt-8 flex gap-3">
-            <button 
-              disabled={saving}
-              onClick={handleSave} 
-              className="flex-grow bg-indigo-600 hover:bg-indigo-700 text-white font-black py-4 rounded-xl text-xs uppercase tracking-widest transition-all shadow-lg flex justify-center items-center gap-2"
-            >
-              {saving ? <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div> : "Sync to Cloud"}
-            </button>
-            <button onClick={() => setEditingMarksFor(null)} className="px-6 bg-slate-100 text-slate-400 font-black py-4 rounded-xl text-xs uppercase tracking-widest">Cancel</button>
-          </div>
+          <button 
+            disabled={isProcessing}
+            onClick={handleSave} 
+            className="w-full mt-6 bg-indigo-600 hover:bg-indigo-700 text-white font-black py-4 rounded-2xl uppercase tracking-widest text-xs flex justify-center items-center"
+          >
+            {isProcessing ? "Processing..." : "Sync Grades"}
+          </button>
         </div>
       </div>
     );
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
+    <div className="space-y-6">
       <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-black text-slate-900 uppercase">Grade Ledger</h2>
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Class {selectedClass} | Sec {selectedSection}</p>
-        </div>
+        <h2 className="text-xl font-black uppercase tracking-tight">Student Records</h2>
         <div className="flex gap-2">
-           <select value={selectedClass} onChange={(e) => setSelectedClass(e.target.value)} className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-black outline-none focus:border-indigo-500">
+           <select value={selectedClass} onChange={(e) => { setSelectedClass(e.target.value); setSelectedSection('A'); }} className="px-4 py-2 bg-slate-50 border rounded-lg font-black text-xs uppercase">
               {CLASSES.map(c => <option key={c} value={c}>Class {c}</option>)}
            </select>
-           <select value={selectedSection} onChange={(e) => setSelectedSection(e.target.value)} className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-black outline-none focus:border-indigo-500">
+           <select value={selectedSection} onChange={(e) => setSelectedSection(e.target.value)} className="px-4 py-2 bg-slate-50 border rounded-lg font-black text-xs uppercase">
               {SECTIONS_MAP[selectedClass].map(s => <option key={s} value={s}>Section {s}</option>)}
            </select>
         </div>
       </div>
 
       <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-slate-50 border-b border-slate-100">
+        <table className="w-full text-left">
+          <thead className="bg-slate-50 border-b">
             <tr>
-              <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Roll</th>
-              <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Name</th>
-              <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Stream</th>
-              <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Action</th>
+              <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Roll</th>
+              <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Student Name</th>
+              <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Stream</th>
+              <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-widest text-slate-400">Action</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
             {filteredStudents.map(s => (
-              <tr key={s.id} className="hover:bg-slate-50/50 transition-colors group">
-                <td className="px-6 py-4 font-bold text-slate-500 text-sm">#{s.roll_no}</td>
-                <td className="px-6 py-4 font-black text-slate-800 text-sm uppercase">{s.name}</td>
-                <td className="px-6 py-4">
-                  <span className="text-[9px] font-black px-2 py-0.5 bg-orange-50 text-orange-600 rounded uppercase">{s.stream}</span>
-                </td>
-                <td className="px-6 py-4 text-right flex justify-end gap-2 opacity-20 group-hover:opacity-100 transition-opacity">
-                   <button onClick={() => setEditingMarksFor(s.id)} className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-                   </button>
-                   <button onClick={() => handleDeleteStudent(s.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                   </button>
+              <tr key={s.id} className="hover:bg-slate-50/50">
+                <td className="px-6 py-4 font-bold text-slate-500">#{s.roll_no}</td>
+                <td className="px-6 py-4 font-black uppercase text-slate-800">{s.name}</td>
+                <td className="px-6 py-4"><span className="text-[9px] font-black px-2 py-1 bg-orange-100 text-orange-700 rounded uppercase">{s.stream}</span></td>
+                <td className="px-6 py-4 text-right flex justify-end gap-2">
+                   <button onClick={() => setEditingMarksFor(s.id)} className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg text-[10px] font-black uppercase tracking-widest">Edit</button>
+                   <button onClick={() => handleDeleteStudent(s.id)} disabled={isProcessing} className="p-2 text-red-600 hover:bg-red-50 rounded-lg text-[10px] font-black uppercase tracking-widest disabled:opacity-30">Del</button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-
-      {editingMarksFor && (
-        <MarkEditor student={students.find(s => s.id === editingMarksFor)!} />
-      )}
+      {editingMarksFor && <MarkEditor student={students.find(s => s.id === editingMarksFor)!} />}
     </div>
   );
 };
