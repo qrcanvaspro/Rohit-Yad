@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Role, Student, Mark, AuthState, TeacherMapping } from './types';
 import { getStreamForClassSection } from './constants';
@@ -30,13 +31,15 @@ const App: React.FC = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
+      // db service now handles fallbacks internally
       const [sData, mData, sSettings] = await Promise.all([
         db.students.getAll(),
         db.marks.getAll(),
         db.settings.get()
       ]);
-      setStudents(sData);
-      setMarks(mData);
+      
+      setStudents(sData || []);
+      setMarks(mData || []);
       
       let teacherMappings = {};
       try {
@@ -52,10 +55,10 @@ const App: React.FC = () => {
       setSettings(prev => ({ 
         ...prev, 
         ...sSettings,
-        teacherMappings
+        teacherMappings: teacherMappings || {}
       }));
     } catch (error: any) {
-      console.error("Fetch Error:", error.message);
+      console.warn("Data load warning:", error.message);
     } finally {
       setLoading(false);
     }
@@ -72,7 +75,8 @@ const App: React.FC = () => {
       id: crypto.randomUUID(),
       stream,
       created_at: new Date().toISOString()
-    };
+    } as Student;
+    
     const created = await db.students.create(newStudent);
     setStudents(prev => [...prev, created]);
     return created;
@@ -86,7 +90,7 @@ const App: React.FC = () => {
         [key]: value === 'true' ? true : value === 'false' ? false : value
       }));
     } catch (e: any) {
-      alert(`Setting Error: ${e.message}`);
+      console.error(`Setting Update Failed: ${e.message}`);
     }
   };
 
@@ -107,7 +111,7 @@ const App: React.FC = () => {
         setLoading(true);
         await db.marks.deleteAll();
         await fetchData(); 
-        alert("Success: All marks have been deleted.");
+        alert("Success: All marks have been cleared.");
       } catch (e: any) {
         alert("Action Failed: " + e.message);
       } finally {
@@ -127,7 +131,6 @@ const App: React.FC = () => {
     );
   }
 
-  // Start with Landing Page
   if (view === 'landing' && !authState.role) {
     return <HomePage onEnterPortal={() => setView('portal')} />;
   }
