@@ -6,11 +6,12 @@ interface AuthProps {
   onLogin: (role: Role, profile: any) => void;
   onRegister: (student: Partial<Student>) => Promise<Student>;
   students: Student[];
+  onBack: () => void;
 }
 
 type AuthView = 'selection' | 'student-login' | 'student-register' | 'teacher-login' | 'admin-login';
 
-const Auth: React.FC<AuthProps> = ({ onLogin, onRegister, students }) => {
+const Auth: React.FC<AuthProps> = ({ onLogin, onRegister, students, onBack }) => {
   const [view, setView] = useState<AuthView>('selection');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -40,7 +41,6 @@ const Auth: React.FC<AuthProps> = ({ onLogin, onRegister, students }) => {
           throw new Error('All fields are mandatory for registration');
         }
         
-        // Local check for existing roll no (requires SELECT policy to be true for anon)
         if (students.some(s => s.roll_no === formData.roll_no)) {
           throw new Error('This Roll Number is already registered');
         }
@@ -87,39 +87,40 @@ const Auth: React.FC<AuthProps> = ({ onLogin, onRegister, students }) => {
 
   if (view === 'selection') {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden bg-slate-50">
-        <div className="absolute top-0 left-0 w-full h-full opacity-5 pointer-events-none">
-           <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-orange-500 rounded-full blur-[120px]"></div>
-           <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-500 rounded-full blur-[120px]"></div>
+      <div className="min-h-screen flex items-center justify-center p-6 bg-slate-900 relative overflow-hidden">
+        {/* Animated Background */}
+        <div className="absolute top-0 left-0 w-full h-full opacity-20 pointer-events-none">
+           <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] saffron-gradient rounded-full blur-[150px] animate-pulse-slow"></div>
+           <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-500 rounded-full blur-[150px] animate-pulse-slow" style={{ animationDelay: '2s' }}></div>
         </div>
 
         <div className="max-w-5xl w-full relative z-10">
           <div className="text-center mb-16">
-            <div className="inline-flex p-5 bg-indigo-900 rounded-3xl shadow-2xl mb-8 border-4 border-indigo-800 rotate-3 hover:rotate-0 transition-transform cursor-pointer">
-               <svg className="w-12 h-12 text-orange-400" fill="currentColor" viewBox="0 0 20 20">
-                 <path d="M10.394 2.827a1 1 0 00-.788 0l-7 3a1 1 0 000 1.848l.788.338v3.623a1 1 0 00.187.585L5.432 14.5a1 1 0 00.828.416h7.48a1 1 0 00.828-.416l1.843-2.279a1 1 0 00.187-.585V8.013l.788-.338a1 1 0 000-1.848l-7-3z"></path>
-               </svg>
-            </div>
-            <h1 className="text-5xl md:text-6xl font-black text-slate-900 uppercase tracking-tighter mb-4">SVM <span className="text-orange-500">RAMBAGH BASTI</span></h1>
-            <p className="text-slate-400 font-bold uppercase tracking-[0.4em] text-[10px]">Official Digital Examination Portal</p>
+            <button onClick={onBack} className="mb-8 text-white/30 hover:text-white flex items-center gap-2 mx-auto font-black text-[10px] uppercase tracking-widest transition-all">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+              Return Home
+            </button>
+            <h1 className="text-5xl md:text-7xl font-black text-white uppercase tracking-tighter mb-4">Access <span className="text-orange-500">Portal</span></h1>
+            <p className="text-slate-400 font-bold uppercase tracking-[0.5em] text-[10px]">Select your identity to continue</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
-              { id: 'student-login', title: 'Students', icon: 'M12 14l9-5-9-5-9 5 9 5z M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z', color: 'orange', desc: 'Results & Enrollment' },
-              { id: 'teacher-login', title: 'Teachers', icon: 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z', color: 'indigo', desc: 'Manage grades and records.' },
-              { id: 'admin-login', title: 'Admin', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z', color: 'slate', desc: 'System Configuration' }
+              { id: 'student-login', title: 'Students', icon: "M12 14l9-5-9-5-9 5 9 5z M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z", color: 'orange', desc: 'Results & Roll' },
+              { id: 'teacher-login', title: 'Teachers', icon: "M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z", color: 'indigo', desc: 'Upload Records' },
+              { id: 'admin-login', title: 'Office', icon: "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z", color: 'slate', desc: 'Control Panel' }
             ].map((card, i) => (
               <button 
                 key={card.id}
                 onClick={() => { resetForm(); setView(card.id as AuthView); }}
-                className="group relative bg-white p-10 rounded-[2.5rem] shadow-xl hover:shadow-2xl transition-all border border-slate-100 hover:-translate-y-2 text-center"
+                className="group relative glass p-10 rounded-[3rem] hover:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] transition-all hover:-translate-y-4 text-center overflow-hidden"
               >
-                <div className={`mx-auto w-20 h-20 bg-${card.color}-50 rounded-3xl flex items-center justify-center text-${card.color}-600 mb-6 group-hover:scale-110 transition-transform shadow-inner`}>
+                <div className={`mx-auto w-24 h-24 saffron-gradient rounded-[2rem] flex items-center justify-center text-white mb-8 group-hover:scale-110 transition-transform shadow-2xl`}>
                    <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={card.icon}></path></svg>
                 </div>
-                <h3 className="text-2xl font-black text-slate-800 uppercase tracking-tight">{card.title}</h3>
-                <p className="text-xs font-bold text-slate-400 mt-2 uppercase tracking-widest">{card.desc}</p>
+                <h3 className="text-2xl font-black text-white uppercase tracking-tight">{card.title}</h3>
+                <p className="text-xs font-bold text-white/40 mt-3 uppercase tracking-[0.2em]">{card.desc}</p>
+                <div className="absolute bottom-0 left-0 w-full h-1 saffron-gradient opacity-0 group-hover:opacity-100 transition-opacity"></div>
               </button>
             ))}
           </div>
@@ -128,33 +129,27 @@ const Auth: React.FC<AuthProps> = ({ onLogin, onRegister, students }) => {
     );
   }
 
-  const theme = view.includes('student') ? 'orange' : view.includes('teacher') ? 'indigo' : 'slate';
+  const themeColor = view.includes('student') ? '#FF9933' : '#4338ca';
 
   return (
-    <div className={`min-h-screen flex items-center justify-center bg-slate-50 p-6`}>
-      <div className="max-w-md w-full bg-white rounded-[3rem] shadow-2xl overflow-hidden border border-slate-100">
-        <div className={`bg-${theme}-600 p-10 text-white text-center relative overflow-hidden`}>
-          <button onClick={() => setView('selection')} className="absolute top-8 left-8 p-2 hover:bg-white/20 rounded-xl transition-all z-10">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+    <div className={`min-h-screen flex items-center justify-center bg-slate-900 p-6`}>
+      <div className="max-w-md w-full glass rounded-[3rem] shadow-2xl overflow-hidden border border-white/10 animate-in zoom-in-95 duration-500">
+        <div className={`p-12 text-center relative overflow-hidden`}>
+          <div className="absolute top-0 left-0 w-full h-full saffron-gradient opacity-10"></div>
+          <button onClick={() => setView('selection')} className="absolute top-8 left-8 p-3 hover:bg-white/10 rounded-2xl transition-all z-10 text-white">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
           </button>
-          <h2 className="text-3xl font-black uppercase tracking-tight mb-1 relative z-10">
-            {view === 'student-login' ? 'Student' : view === 'student-register' ? 'Enrollment' : view === 'teacher-login' ? 'Teacher' : 'Admin'}
+          <h2 className="text-4xl font-black uppercase text-white tracking-tighter mb-2 relative z-10">
+            {view === 'student-login' ? 'Sign In' : view === 'student-register' ? 'Join Portal' : view === 'teacher-login' ? 'Teachers' : 'Security'}
           </h2>
-          <p className="text-white/60 text-[10px] font-black uppercase tracking-[0.3em] relative z-10">Secure Gateway</p>
+          <p className="text-white/40 text-[10px] font-black uppercase tracking-[0.4em] relative z-10">Verification required</p>
         </div>
         
-        <form onSubmit={handleAction} className="p-10 space-y-5">
+        <form onSubmit={handleAction} className="px-10 pb-12 space-y-6">
           {error && (
-            <div className="bg-red-50 text-red-600 p-4 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-red-100 flex flex-col gap-2">
-              <div className="flex items-center gap-3">
-                <svg className="w-5 h-5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd"></path></svg>
-                <span>{error}</span>
-              </div>
-              {error.toLowerCase().includes('policy') && (
-                <p className="text-[8px] opacity-70 border-t border-red-200 pt-2 mt-1">
-                  Administrator needs to enable 'INSERT' policy for 'anon' role in Supabase.
-                </p>
-              )}
+            <div className="bg-red-500/10 text-red-400 p-4 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-red-500/20 flex items-center gap-3">
+              <svg className="w-5 h-5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd"></path></svg>
+              <span>{error}</span>
             </div>
           )}
           
@@ -162,31 +157,31 @@ const Auth: React.FC<AuthProps> = ({ onLogin, onRegister, students }) => {
             <div className="space-y-4">
               {view === 'student-register' && (
                 <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Full Name</label>
-                  <input type="text" required value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="w-full px-5 py-4 rounded-2xl border-2 border-slate-50 focus:border-orange-500 focus:bg-white bg-slate-50 outline-none font-bold text-slate-700 transition-all" placeholder="e.g. Rahul Verma" />
+                  <label className="block text-[10px] font-black text-white/30 uppercase tracking-widest mb-3 ml-1">Full Student Name</label>
+                  <input type="text" required value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="w-full px-6 py-4 rounded-2xl border border-white/10 focus:border-orange-500 focus:bg-white/5 bg-white/5 outline-none font-bold text-white transition-all" placeholder="e.g. Aryan Singh" />
                 </div>
               )}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Roll No.</label>
-                  <input type="text" required value={formData.roll_no} onChange={(e) => setFormData({...formData, roll_no: e.target.value})} className="w-full px-5 py-4 rounded-2xl border-2 border-slate-50 focus:border-orange-500 focus:bg-white bg-slate-50 outline-none font-bold text-slate-700 transition-all" placeholder="ID" />
+                  <label className="block text-[10px] font-black text-white/30 uppercase tracking-widest mb-3 ml-1">Roll No.</label>
+                  <input type="text" required value={formData.roll_no} onChange={(e) => setFormData({...formData, roll_no: e.target.value})} className="w-full px-6 py-4 rounded-2xl border border-white/10 focus:border-orange-500 bg-white/5 outline-none font-bold text-white transition-all" placeholder="ID" />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Comp. ID</label>
-                  <input type="text" required value={formData.computer_id} onChange={(e) => setFormData({...formData, computer_id: e.target.value})} className="w-full px-5 py-4 rounded-2xl border-2 border-slate-50 focus:border-orange-500 focus:bg-white bg-slate-50 outline-none font-bold text-slate-700 transition-all" placeholder="Secret Key" />
+                  <label className="block text-[10px] font-black text-white/30 uppercase tracking-widest mb-3 ml-1">Secret Key</label>
+                  <input type="text" required value={formData.computer_id} onChange={(e) => setFormData({...formData, computer_id: e.target.value})} className="w-full px-6 py-4 rounded-2xl border border-white/10 focus:border-orange-500 bg-white/5 outline-none font-bold text-white transition-all" placeholder="Comp ID" />
                 </div>
               </div>
               {view === 'student-register' && (
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Grade</label>
-                    <select value={formData.class_name} onChange={(e) => setFormData({...formData, class_name: e.target.value, section: 'A'})} className="w-full px-5 py-4 rounded-2xl border-2 border-slate-50 focus:border-orange-500 bg-slate-50 outline-none font-bold text-slate-700 transition-all">
+                    <label className="block text-[10px] font-black text-white/30 uppercase tracking-widest mb-3 ml-1">Grade</label>
+                    <select value={formData.class_name} onChange={(e) => setFormData({...formData, class_name: e.target.value, section: 'A'})} className="w-full px-6 py-4 rounded-2xl border border-white/10 focus:border-orange-500 bg-slate-800 outline-none font-bold text-white transition-all appearance-none">
                       {CLASSES.map(c => <option key={c} value={c}>Class {c}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Section</label>
-                    <select value={formData.section} onChange={(e) => setFormData({...formData, section: e.target.value})} className="w-full px-5 py-4 rounded-2xl border-2 border-slate-50 focus:border-orange-500 bg-slate-50 outline-none font-bold text-slate-700 transition-all">
+                    <label className="block text-[10px] font-black text-white/30 uppercase tracking-widest mb-3 ml-1">Section</label>
+                    <select value={formData.section} onChange={(e) => setFormData({...formData, section: e.target.value})} className="w-full px-6 py-4 rounded-2xl border border-white/10 focus:border-orange-500 bg-slate-800 outline-none font-bold text-white transition-all appearance-none">
                       {SECTIONS_MAP[formData.class_name].map(s => <option key={s} value={s}>Section {s}</option>)}
                     </select>
                   </div>
@@ -197,19 +192,19 @@ const Auth: React.FC<AuthProps> = ({ onLogin, onRegister, students }) => {
 
           {(view === 'teacher-login' || view === 'admin-login') && (
             <div>
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Master Codeword</label>
-              <input type="password" required value={formData.codeword} onChange={(e) => setFormData({...formData, codeword: e.target.value})} className={`w-full px-6 py-5 rounded-2xl border-2 border-slate-50 focus:border-${theme}-500 focus:bg-white bg-slate-50 outline-none font-black text-slate-700 transition-all text-center tracking-[0.5em] text-lg`} placeholder="••••••" />
+              <label className="block text-[10px] font-black text-white/30 uppercase tracking-widest mb-3 ml-1">Access Codeword</label>
+              <input type="password" required value={formData.codeword} onChange={(e) => setFormData({...formData, codeword: e.target.value})} className={`w-full px-8 py-6 rounded-3xl border border-white/10 focus:border-orange-500 focus:bg-white/5 bg-white/5 outline-none font-black text-white transition-all text-center tracking-[1em] text-2xl`} placeholder="••••••" />
             </div>
           )}
 
-          <button type="submit" disabled={loading} className={`w-full bg-${theme}-600 hover:bg-${theme}-700 disabled:bg-slate-200 text-white font-black py-5 rounded-2xl shadow-xl transition-all flex justify-center items-center gap-3 uppercase tracking-widest text-[10px]`}>
-            {loading ? <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div> : 'Authorize & Enter'}
+          <button type="submit" disabled={loading} className={`w-full saffron-gradient hover:scale-[1.02] disabled:opacity-50 text-white font-black py-6 rounded-2xl shadow-2xl transition-all flex justify-center items-center gap-3 uppercase tracking-[0.3em] text-[10px] mt-4`}>
+            {loading ? <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div> : 'Authorize Now'}
           </button>
 
           {view.includes('student') && (
-            <div className="text-center pt-2">
-              <button type="button" onClick={() => { setView(view === 'student-login' ? 'student-register' : 'student-login'); resetForm(); }} className={`text-[10px] text-${theme}-600 hover:text-${theme}-800 font-black uppercase tracking-widest underline decoration-2 underline-offset-4`}>
-                {view === 'student-login' ? "New Student? Enroll Here" : 'Back to Login'}
+            <div className="text-center pt-4">
+              <button type="button" onClick={() => { setView(view === 'student-login' ? 'student-register' : 'student-login'); resetForm(); }} className={`text-[10px] text-white/40 hover:text-white font-black uppercase tracking-widest transition-colors underline underline-offset-8 decoration-white/10`}>
+                {view === 'student-login' ? "New student? Enroll here" : 'Already enrolled? Log in'}
               </button>
             </div>
           )}

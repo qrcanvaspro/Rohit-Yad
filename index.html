@@ -5,27 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     
     <!-- Primary Meta Tags -->
-    <title>SVM Rambagh Basti - Official Digital Result Portal (Class 9-12)</title>
-    <meta name="title" content="SVM Rambagh Basti - Official Digital Result Portal (Class 9-12)" />
-    <meta name="description" content="Official digital examination and result portal for Saraswati Vidya Mandir, Rambagh Basti. Download marksheets and register online for Classes 9, 10, 11, and 12." />
-    <meta name="keywords" content="SVM Rambagh Basti, Saraswati Vidya Mandir Basti, Result Portal Basti, School Result 9 10 11 12, Rambagh Result, SVM Digital Marksheet, SVM Basti Exam, SVM Result 2024, SVM Rambagh Registration, SVM Basti Student Login" />
-    <meta name="author" content="SVM Rambagh Basti" />
+    <title>SVM Rambagh Basti - Official Digital Result Portal</title>
+    <meta name="title" content="SVM Rambagh Basti - Official Digital Result Portal" />
+    <meta name="description" content="Official digital examination and result portal for Saraswati Vidya Mandir, Rambagh Basti. Secure and fast portal for students." />
     
-    <!-- Google Site Verification -->
-    <meta name="google-site-verification" content="cao8WIi-nY_B7XfTYpwPHxlaNvWAjaPF4-N-45AcLQw" />
-    
-    <!-- Canonical & Sitemap -->
     <link rel="canonical" href="https://rambaghresultportal.netlify.app/" />
-    <link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap.xml" />
     <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#4338ca" />
-
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://rambaghresultportal.netlify.app/" />
-    <meta property="og:title" content="SVM Rambagh Basti - Digital Result Portal" />
-    <meta property="og:description" content="Access your annual examination results and digital marksheets online for SVM Rambagh Basti. Secure and fast portal for students." />
-    <meta property="og:image" content="https://rambaghresultportal.netlify.app/og-image.jpg" />
+    <meta name="theme-color" content="#1e1b4b" />
 
     <!-- Fonts & Styling -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -33,25 +19,56 @@
     <style>
       :root {
         --svm-saffron: #FF9933;
-        --svm-navy: #131921;
-        --svm-indigo: #4338ca;
+        --svm-navy: #0f172a;
+        --svm-gold: #fbbf24;
       }
       body { 
         font-family: 'Outfit', sans-serif; 
-        background-color: #f8fafc;
-        color: var(--svm-navy);
+        background-color: #fcfcfd;
+        color: #1e293b;
         margin: 0;
+        overflow-x: hidden;
       }
-      /* Custom Scrollbar */
-      ::-webkit-scrollbar { width: 8px; }
-      ::-webkit-scrollbar-track { background: #f1f1f1; }
-      ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-      ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+      
+      .glass {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+      }
+
+      .saffron-gradient {
+        background: linear-gradient(135deg, #FF9933 0%, #ed8936 100%);
+      }
+
+      @keyframes float {
+        0% { transform: translateY(0px) rotate(0deg); }
+        50% { transform: translateY(-20px) rotate(5deg); }
+        100% { transform: translateY(0px) rotate(0deg); }
+      }
+
+      .animate-float {
+        animation: float 6s ease-in-out infinite;
+      }
+
+      @keyframes pulse-slow {
+        0%, 100% { opacity: 0.3; transform: scale(1); }
+        50% { opacity: 0.6; transform: scale(1.1); }
+      }
+
+      .animate-pulse-slow {
+        animation: pulse-slow 8s ease-in-out infinite;
+      }
+
+      .hero-pattern {
+        background-color: #0f172a;
+        background-image: radial-gradient(at 0% 0%, rgba(255, 153, 51, 0.15) 0, transparent 50%), 
+                          radial-gradient(at 50% 0%, rgba(67, 56, 202, 0.1) 0, transparent 50%);
+      }
 
       @media print {
-        @page { size: A4; margin: 10mm; }
         .no-print { display: none !important; }
-        .print-card { border: 1px solid #e2e8f0 !important; box-shadow: none !important; border-radius: 0 !important; }
+        body { background: white; }
       }
     </style>
   <script type="importmap">

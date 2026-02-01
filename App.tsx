@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Role, Student, Mark, AuthState, TeacherMapping } from './types';
 import { getStreamForClassSection } from './constants';
@@ -7,9 +6,11 @@ import TeacherDashboard from './components/TeacherDashboard';
 import StudentDashboard from './components/StudentDashboard';
 import AdminDashboard from './components/AdminDashboard';
 import { Layout } from './components/Layout';
+import { HomePage } from './components/HomePage';
 import { db } from './supabase';
 
 const App: React.FC = () => {
+  const [view, setView] = useState<'landing' | 'portal'>('landing');
   const [authState, setAuthState] = useState<AuthState>({
     user: null,
     role: null,
@@ -37,7 +38,6 @@ const App: React.FC = () => {
       setStudents(sData);
       setMarks(mData);
       
-      // Parse teacher mappings if they exist in DB
       let teacherMappings = {};
       try {
         if (sSettings.teacherMappings) {
@@ -96,7 +96,10 @@ const App: React.FC = () => {
     setSettings(prev => ({ ...prev, teacherMappings: mappings }));
   };
 
-  const handleLogout = () => setAuthState({ user: null, role: null, profile: null });
+  const handleLogout = () => {
+    setAuthState({ user: null, role: null, profile: null });
+    setView('landing');
+  };
 
   const handleDeleteAllMarks = async () => {
     if (confirm("DANGER: This will permanently delete ALL marks for ALL students. Continue?")) {
@@ -115,13 +118,18 @@ const App: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="min-h-screen flex items-center justify-center bg-slate-900">
         <div className="flex flex-col items-center">
-          <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
-          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Loading SVM Portal...</p>
+          <div className="w-16 h-16 border-[6px] border-white/10 border-t-orange-500 rounded-full animate-spin mb-6 shadow-2xl"></div>
+          <p className="text-[10px] font-black uppercase tracking-[0.5em] text-white/30">Initializing Secure Portal</p>
         </div>
       </div>
     );
+  }
+
+  // Start with Landing Page
+  if (view === 'landing' && !authState.role) {
+    return <HomePage onEnterPortal={() => setView('portal')} />;
   }
 
   if (!authState.role) {
@@ -130,6 +138,7 @@ const App: React.FC = () => {
         onLogin={(role, profile) => setAuthState({ user: profile, role, profile })}
         onRegister={handleRegister}
         students={students}
+        onBack={() => setView('landing')}
       />
     );
   }
