@@ -1,18 +1,12 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-// Configuration
-const SUPABASE_URL = "https://zpfuzexzvdxeqxtdwqzv.supabase.co";
-// Note: This key is used for the public client. 
-// In a production environment, this would be the 'anon' public key.
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpwZnV6ZXh6dmR4ZXF4dGR3cXp2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTYyMDAwMDAsImV4cCI6MjAzMTc2MDAwMH0.dummy_signature_for_local_resilience";
+// User provided credentials
+const SUPABASE_URL = "https://lrryohsmgcaujltllczs.supabase.co";
+const SUPABASE_KEY = "sb_publishable_oONIXlpH0i1apUn0bmuOBw_aY47_54P";
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-/**
- * Robust Data Handler with LocalStorage Fallback
- * This ensures the app works even if the Supabase project is paused or unreachable.
- */
 const storage = {
   get: (key: string) => {
     try {
@@ -27,120 +21,119 @@ const storage = {
   }
 };
 
-const handleRequest = async (promise: Promise<any>, storageKey: string, fallbackValue: any = []) => {
-  try {
-    const { data, error } = await promise;
-    if (error) throw error;
-    
-    // Sync to local storage on success
-    if (data) storage.set(storageKey, data);
-    return data || fallbackValue;
-  } catch (err: any) {
-    console.warn(`[Portal Sync] Cloud unreachable for ${storageKey}. Using local data.`, err.message);
-    // Fallback to local storage if cloud fails
-    return storage.get(storageKey) || fallbackValue;
-  }
-};
-
 export const db = {
   students: {
     async getAll() {
-      return handleRequest(
-        supabase.from('students').select('*').order('roll_no', { ascending: true }),
-        'students'
-      );
+      const local = storage.get('students') || [];
+      try {
+        const { data, error } = await supabase.from('students').select('*').order('roll_no');
+        if (error) throw error;
+        
+        storage.set('students', data || []);
+        return data || [];
+      } catch (err) {
+        console.warn("Using local cache", err);
+        return local;
+      }
     },
     async create(student: any) {
-      // Local first for immediate UI update
-      const current = storage.get('students') || [];
-      storage.set('students', [...current, student]);
-      
       try {
         const { data, error } = await supabase.from('students').insert([student]).select();
         if (error) throw error;
+        
+        const current = storage.get('students') || [];
+        storage.set('students', [...current, data[0]]);
         return data[0];
       } catch (err) {
-        console.warn("Cloud registration failed, student saved locally.");
+        console.error("Cloud insert failed", err);
+        const current = storage.get('students') || [];
+        storage.set('students', [...current, student]);
         return student;
       }
     },
     async delete(id: string) {
-      // Local update
-      const current = storage.get('students') || [];
-      storage.set('students', current.filter((s: any) => s.id !== id));
-      
       try {
-        await supabase.from('marks').delete().eq('student_id', id);
-        await supabase.from('students').delete().eq('id', id);
-      } catch (e) {
-        console.warn("Cloud deletion failed, record removed locally.");
+        const { error } = await supabase.from('students').delete().eq('id', id);
+        if (error) throw error;
+        
+        const current = storage.get('students') || [];
+        storage.set('students', current.filter((s: any) => s.id !== id));
+      } catch (err) {
+        console.error("Delete failed", err);
       }
       return true;
     }
   },
   marks: {
     async getAll() {
-      return handleRequest(
-        supabase.from('marks').select('*'),
-        'marks'
-      );
+      const local = storage.get('marks') || [];
+      try {
+        const { data, error } = await supabase.from('marks').select('*');
+        if (error) throw error;
+        
+        storage.set('marks', data || []);
+        return data || [];
+      } catch {
+        return local;
+      }
     },
     async upsert(marks: any[]) {
-      // Local update
-      const current = storage.get('marks') || [];
-      const updated = [...current];
-      marks.forEach(newMark => {
-        const idx = updated.findIndex(m => m.student_id === newMark.student_id && m.subject === newMark.subject);
-        if (idx > -1) updated[idx] = newMark;
-        else updated.push(newMark);
-      });
-      storage.set('marks', updated);
-
       try {
         const { error } = await supabase.from('marks').upsert(marks, { onConflict: 'student_id,subject' });
         if (error) throw error;
-      } catch (e) {
-        console.warn("Cloud marks sync failed, saved locally.");
+        
+        const current = storage.get('marks') || [];
+        let updated = [...current];
+        marks.forEach(m => {
+          const idx = updated.findIndex(um => um.student_id === m.student_id && um.subject === m.subject);
+          if (idx > -1) updated[idx] = { ...updated[idx], ...m };
+          else updated.push(m);
+        });
+        storage.set('marks', updated);
+      } catch (err) {
+        console.error("Marks update failed", err);
       }
     },
     async deleteAll() {
-      storage.set('marks', []);
       try {
-        await supabase.from('marks').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-      } catch (e) {
-        console.warn("Cloud wipe failed, local data cleared.");
+        const { error } = await supabase.from('marks').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        if (error) throw error;
+        storage.set('marks', []);
+      } catch (err) {
+        console.error("Clear marks failed", err);
       }
-      return true;
     }
   },
   settings: {
     async get() {
-      const defaultSettings = { resultsEnabled: true, examName: 'Annual Examination', session: '2024-25', teacherMappings: {} };
+      const defaults = { resultsEnabled: true, examName: 'Annual Examination', session: '2024-25', teacherMappings: {} };
       try {
         const { data, error } = await supabase.from('settings').select('*');
-        if (error || !data) throw new Error("No cloud settings");
+        if (error) throw error;
         
-        const settings = data.reduce((acc: any, curr: any) => {
-          acc[curr.key] = curr.value === 'true' ? true : curr.value === 'false' ? false : curr.value;
+        if (!data || data.length === 0) return storage.get('settings') || defaults;
+        
+        const s = data.reduce((acc: any, c: any) => {
+          acc[c.key] = c.value === 'true' ? true : c.value === 'false' ? false : c.value;
           return acc;
         }, {});
         
-        const merged = { ...defaultSettings, ...settings };
+        const merged = { ...defaults, ...s };
         storage.set('settings', merged);
         return merged;
-      } catch (err) {
-        return storage.get('settings') || defaultSettings;
+      } catch {
+        return storage.get('settings') || defaults;
       }
     },
     async update(key: string, value: string) {
-      const current = storage.get('settings') || {};
-      storage.set('settings', { ...current, [key]: value === 'true' ? true : value === 'false' ? false : value });
-
       try {
         const { error } = await supabase.from('settings').upsert({ key, value }, { onConflict: 'key' });
         if (error) throw error;
-      } catch (e) {
-        console.warn("Cloud settings update failed, saved locally.");
+        
+        const current = storage.get('settings') || {};
+        storage.set('settings', { ...current, [key]: value === 'true' ? true : value === 'false' ? false : value });
+      } catch (err) {
+        console.error("Settings update failed", err);
       }
     }
   }
