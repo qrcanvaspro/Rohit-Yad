@@ -12,38 +12,38 @@ interface LayoutProps {
 
 export const Layout: React.FC<LayoutProps> = ({ children, user, role, onLogout, schoolName }) => {
   return (
-    <div className="flex flex-col min-h-screen bg-[#fffdf0] hero-pattern">
-      {/* Decorative Shloka Bar */}
-      <div className="h-10 saffron-gradient text-white flex items-center justify-center gap-10 px-6 overflow-hidden z-[60]">
-         <span className="text-[11px] font-black uppercase tracking-[1em] whitespace-nowrap animate-pulse">सा विद्या या विमुक्तये</span>
-         <div className="hidden md:block w-3 h-3 bg-white/20 rounded-full"></div>
-         <span className="hidden md:block text-[11px] font-black uppercase tracking-[1em] whitespace-nowrap opacity-60">Saraswati Vidya Mandir &bull; Rambagh Basti</span>
-         <div className="hidden md:block w-3 h-3 bg-white/20 rounded-full"></div>
-         <span className="text-[11px] font-black uppercase tracking-[1em] whitespace-nowrap animate-pulse">तमसो मा ज्योतिर्गमय</span>
+    <div className="flex flex-col min-h-screen bg-[#fffdf0] hero-pattern-rich">
+      {/* Heavy Decorative Status Bar */}
+      <div className="h-14 saffron-gradient text-white flex items-center justify-center gap-16 px-10 overflow-hidden z-[100] shadow-2xl">
+         <span className="shloka-font text-lg font-black tracking-[0.3em] animate-pulse">सा विद्या या विमुक्तये</span>
+         <div className="hidden md:block w-4 h-4 bg-white/30 rounded-full animate-bounce"></div>
+         <span className="hidden md:block text-[12px] font-black uppercase tracking-[1em] opacity-80 whitespace-nowrap">SVM Official Academic Repository &bull; Rambagh Basti</span>
+         <div className="hidden md:block w-4 h-4 bg-white/30 rounded-full animate-bounce"></div>
+         <span className="shloka-font text-lg font-black tracking-[0.3em] animate-pulse">तमसो मा ज्योतिर्गमय</span>
       </div>
 
-      <header className="bg-white/90 backdrop-blur-3xl border-b-4 border-amber-500/10 sticky top-0 z-50 px-10 h-32">
+      <header className="bg-white/95 backdrop-blur-3xl border-b-8 border-orange-500/10 sticky top-0 z-50 px-12 h-36">
         <div className="max-w-7xl mx-auto h-full flex justify-between items-center">
-          <div className="flex items-center gap-8">
-            <div className="w-16 h-16 gold-gradient rounded-3xl flex items-center justify-center shadow-2xl shadow-amber-500/40 border-2 border-white/20">
-              <svg className="w-9 h-9 text-white" fill="currentColor" viewBox="0 0 20 20">
+          <div className="flex items-center gap-10">
+            <div className="w-20 h-20 gold-gradient rounded-[2.5rem] flex items-center justify-center shadow-2xl shadow-orange-500/40 border-4 border-white">
+              <svg className="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M10.394 2.827a1 1 0 00-.788 0l-7 3a1 1 0 000 1.848l.788.338v3.623a1 1 0 00.187.585L5.432 14.5a1 1 0 00.828.416h7.48a1 1 0 00.828-.416l1.843-2.279a1 1 0 00.187-.585V8.013l.788-.338a1 1 0 000-1.848l-7-3z"></path>
               </svg>
             </div>
             <div>
-              <h1 className="text-3xl font-black text-amber-950 uppercase tracking-tighter leading-none">{schoolName}</h1>
-              <p className="text-[12px] font-black text-amber-600 uppercase tracking-[0.5em] mt-2.5 opacity-80">{role} Authorized Gateway</p>
+              <h1 className="text-4xl font-black text-orange-950 uppercase tracking-tighter leading-none">{schoolName}</h1>
+              <p className="text-[13px] font-black text-orange-600 uppercase tracking-[0.6em] mt-3 opacity-80">Authenticated: {role}</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-12">
+          <div className="flex items-center gap-14">
             <div className="hidden lg:block text-right">
-              <p className="text-[11px] font-black text-amber-950/30 uppercase tracking-[0.3em] mb-1.5">Authorized Identity</p>
-              <p className="text-lg font-black text-amber-950 uppercase tracking-tight">{user?.name || 'Academic Scholar'}</p>
+              <p className="text-[12px] font-black text-orange-950/30 uppercase tracking-[0.4em] mb-2">Academic Profile</p>
+              <p className="text-2xl font-black text-orange-950 uppercase tracking-tight">{user?.name || 'Authorized Scholar'}</p>
             </div>
             <button 
               onClick={onLogout}
-              className="bg-red-50 hover:bg-red-100 text-red-900/60 hover:text-red-950 px-12 py-5 rounded-[2rem] text-[11px] font-black uppercase tracking-[0.4em] transition-all border-2 border-red-500/10 active:scale-95 shadow-sm"
+              className="bg-red-50 hover:bg-red-600 hover:text-white px-14 py-6 rounded-[2.5rem] text-[12px] font-black uppercase tracking-[0.5em] transition-all border-4 border-red-500/10 active:scale-90 shadow-xl"
             >
               Sign Out
             </button>
@@ -51,23 +51,23 @@ export const Layout: React.FC<LayoutProps> = ({ children, user, role, onLogout, 
         </div>
       </header>
 
-      <main className="flex-grow max-w-7xl mx-auto w-full px-10 py-20 relative">
-         <div className="relative z-10">
-            {children}
-         </div>
+      <main className="flex-grow max-w-7xl mx-auto w-full px-12 py-24 relative z-10">
+         {children}
       </main>
 
-      <footer className="py-32 bg-white border-t-8 border-amber-500/5">
-        <div className="max-w-7xl mx-auto px-10 flex flex-col items-center">
-          <div className="flex items-center gap-12 mb-12">
-            <div className="h-px w-32 bg-amber-200/40"></div>
-            <div className="w-6 h-6 gold-gradient rounded-full shadow-2xl shadow-amber-500/50"></div>
-            <div className="h-px w-32 bg-amber-200/40"></div>
+      <footer className="py-40 bg-white border-t-8 border-orange-500/10 relative overflow-hidden">
+        <div className="max-w-7xl mx-auto px-12 flex flex-col items-center">
+          <div className="flex items-center gap-16 mb-16">
+            <div className="h-1 w-48 bg-orange-100/50 rounded-full"></div>
+            <div className="w-10 h-10 gold-gradient rounded-full shadow-2xl border-4 border-white animate-pulse"></div>
+            <div className="h-1 w-48 bg-orange-100/50 rounded-full"></div>
           </div>
-          <p className="text-[13px] font-black text-amber-950/30 uppercase tracking-[1em] mb-8 animate-pulse">Official Academic Archive &bull; V6.5</p>
-          <p className="text-sm font-bold text-amber-950/40 tracking-tight text-center max-w-2xl">
-            Saraswati Vidya Mandir, Rambagh Basti. This system is monitored and protected. All data processed is property of the Principal's Office.
-          </p>
+          <p className="text-[15px] font-black text-orange-950/30 uppercase tracking-[1.2em] mb-10 text-center">Vidya Bharti Digital Integration &bull; 2024</p>
+          <div className="bg-orange-50/50 p-10 rounded-[3rem] border-4 border-orange-100 max-w-4xl text-center">
+             <p className="text-lg font-bold text-orange-950/50 leading-relaxed italic">
+               "This portal serves as the official digital repository for Saraswati Vidya Mandir, Rambagh Basti. All intellectual and academic property recorded within this vault is protected by institutional mandates."
+             </p>
+          </div>
         </div>
       </footer>
     </div>
